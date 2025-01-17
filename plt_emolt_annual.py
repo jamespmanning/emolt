@@ -26,61 +26,58 @@ import pytz
 ###### HARDCODES #########
 maxnumyr=2 # maximum number of years needed to include (ie don't bother otherwise)
 lincol=['red','blue','green','black','yellow','cyan','magenta','gray']
+
 #depmean=[183,10,28,63,22,20,31]
 #sites=['JS02','BD01','MC02','JT04','AG01','BN01','WD01']
-
 #depmean=[25,22,63]
 #sites=['CJ01','AG01','JT04']
-
-
-#depmean=[48,11,52,44,16,30,26,6]#,11]
-#sites=['OD08','BI03','DJ01','TH01','RA01','BF01','OM01','BT01']#,'AC02']
-
-#depmean=[48,11,44,16,30,26,6,11]
-#sites=['OD08','BI03','TH01','RA01','BF01','OM01','BT01','AC02']
-
-depmean=[43]
-
-
+depmean=[25]
 sites=['BS02']
-sites=['MF02']
 sites=['DJ02']
 sites=['DK01']
-sites=['CJ01']
 sites=['BT01']
-sites=['BF02']
-sites=['AC02']
-sites=['TS02']
 sites=['JA01']
 sites=['OD08']
-sites=['GS01']
 sites=['BF01']
-sites=['BI03']
 sites=['AG01']
 sites=['BC02']
 sites=['JS02','JS06']
 sites=['JC01']
 sites=['CP01']
+sites=['GS01']
+sites=['AC02']
+sites=['BT01']
+sites=['BI03']
+sites=['MF02']
+sites=['CJ01']
+sites=['DMF2']
+sites=['BN01']
+sites=['JS02']
+sites=['TS02']
+sites=['BF02']
+
 newfile='output/JA01m60271701.dat'
 newfile='output/BS02m60332202.dat'
-newfile='output/MF02m60091902.dat'
 newfile='output/DJ02m49139902.dat'
 newfile='output/DK01m60252301.dat'
-newfile='output/CJ01m60422401.dat'
-newfile='output/BT01m91071701.dat'
-newfile='output/BF02m87870502.dat'
-newfile='output/AC02m60051402.dat'
-newfile='output/TS02m91001102.dat'
 newfile='output/JA01m91121801.dat'
 newfile='output/OD08m60321308.dat'
-newfile='output/GS01m60402001.dat'
 newfile='output/BF01m90982001.dat'
-newfile='output/BI03m60311003.dat'
 newfile='output/AG01m60374401.dat'
 newfile='output/BC02m87861102.dat'
 newfile='output/JS06m60482606.dat'
 newfile='output/JC01m91062301.dat'
 newfile='output/CP01m87881801.dat'
+newfile='output/GS01m60402101.dat'
+newfile='output/AC02m60051502.dat'
+newfile='output/BT01m91071801.dat'
+newfile='output/BI03m60311103.dat'
+newfile='output/MF02m60092002.dat'
+newfile='output/CJ01m60422501.dat'
+newfile='output/BN01m60462101.dat'
+newfile='output/JS02m49112802.dat'
+newfile='output/TS02m91001302.dat'
+newfile='output/BF02m87870602.dat'
 sitelabel="".join(sites)
 #leg=['Sprague Downeast','Alley Mid-Coast','Brown Mass Bay']
 #leg=['Carter','Gamage','Tripp']
@@ -103,8 +100,10 @@ def getobs_tempdepth_latlon(lat,lon):
     """
     Function written by Jim Manning to get emolt data from url, return datetime, depth, and temperature.
     this version needed in early 2023 when "site" was no longer served via ERDDAP
+    Modified 10/27/2024 to allow for more precise lat/lon
     """
-    url = 'https://comet.nefsc.noaa.gov/erddap/tabledap/eMOLT.csvp?time,depth,sea_water_temperature&latitude='+str(lat)+'&longitude='+str(lon)+'+&orderBy(%22time%22)'
+    #url = 'https://comet.nefsc.noaa.gov/erddap/tabledap/eMOLT.csvp?time,depth,sea_water_temperature&latitude='+str(lat)+'&longitude='+str(lon)+'+&orderBy(%22time%22)'
+    url='https://comet.nefsc.noaa.gov/erddap/tabledap/eMOLT_historic_non-realtime_bottom_temperatures.csvp?time%2Clatitude%2Clongitude%2Cdepth%2Csea_water_temperature&latitude%3E'+str(lat-0.03)+'&latitude%3C'+str(lat+0.03)+'&longitude%3E'+str(lon-0.03)+'&longitude%3C'+str(lon+0.03)+'+&orderBy(%22time%22)'
     df=read_csv(url,skiprows=[1])
     df['time']=df['time (UTC)']
     temp=1.8 * df['sea_water_temperature (degree_C)'].values + 32 #converts to degF
@@ -157,16 +156,16 @@ for j in range(len(sites)):
   [lat,lon]=getsite_latlon(sites[j])# started using this on 25 May 2023 when NEFSC took away "site" from ERDDAP
   tso=getobs_tempdepth_latlon(lat,lon)
   # Here's where we add extra year(s) that are not yet in the database
-  dfnow=read_csv(newfile,header=None)
-  dfnow.columns=['SITE','SN','PS','TIME','YD','temp','SALT','Depth']
-  del dfnow['SITE'];del dfnow['SN'];del dfnow['PS'];del dfnow['YD'];del dfnow['SALT'];
-  dfnow['TIME']=to_datetime(dfnow['TIME']).dt.tz_localize(tz.tzutc())#,utc=True)
-  dfnow.set_index('TIME',inplace=True)
-  #dfnow22=dfnow[dfnow.index<np.datetime64(dt(2023,1,1,0,0,0,pytz.UTC))]
-  timezone = pytz.timezone('UTC')
-  dfnow22=dfnow[dfnow.index<timezone.localize(to_datetime('01-01-2024'))]#.dt.tz_localize(tz.tzutc())]
-  tso = concat([tso,dfnow22])
-  #tso = tso.append(dfnow22)  
+  if len(newfile)>0:
+      dfnow=read_csv(newfile,header=None)
+      dfnow.columns=['SITE','SN','PS','TIME','YD','temp','SALT','Depth']
+      del dfnow['SITE'];del dfnow['SN'];del dfnow['PS'];del dfnow['YD'];del dfnow['SALT'];
+      dfnow['TIME']=to_datetime(dfnow['TIME']).dt.tz_localize(tz.tzutc())#,utc=True)
+      dfnow.set_index('TIME',inplace=True)
+      #dfnow22=dfnow[dfnow.index<np.datetime64(dt(2023,1,1,0,0,0,pytz.UTC))]
+      timezone = pytz.timezone('UTC')
+      dfnow22=dfnow[dfnow.index<timezone.localize(to_datetime('01-01-2025'))]#.dt.tz_localize(tz.tzutc())]
+      tso = concat([tso,dfnow22])
   yr,day=[],[]
   for k in range(len(tso)):
       yr.append(tso.index[k].year)
@@ -176,6 +175,7 @@ for j in range(len(sites)):
   tso1=tso.groupby(['Day','Year']).mean().unstack()
   ts=0
   te=366
+  #dfa=tso['temp'].resample('YE-JUN').mean().dropna().plot(ax=ax,label=sites[j]+' annual')
   if len(list(set(tso['Year'].values)))>maxnumyr:
     for k in list(np.sort(list(set(tso['Year'].values)))):
       tso12=tso1['temp'][k].dropna() # series for this year
@@ -201,13 +201,13 @@ for j in range(len(sites)):
     tso_a=tso3['temp'].resample('A').mean()#.ohlc_dict()
     tso_ac=tso3['temp'].resample('A').count()
     tso_a=tso_a[tso_ac.values!=0]
-    # note: decided in Dec 2017 that the "loffset" wasn't working so I just subtracted 182 days in the plot statement below instead    
-    #tso_a=tso_a.ix[tso_a['count']>np.mean(tso_a['count'])*0.75] # make sure we only include years when at least 75% of this time of year is covered
-    #ax.plot(tso_a.index,tso_a['mean'].values,color=lincol[j],linewidth=3,label=sites[j]+' (yeardays '+str(ts)+' through '+str(te)+')')
-    #ax.plot(tso_a.index,tso_a['mean'].values,color=lincol[j],linewidth=3,label=leg[j])
-    #ax.plot(tso_a.index-td(days=182),tso_a['mean'].values,color=lincol[j],linewidth=3,label=sites[j]+' ('+num2date(ts).replace(year=2000).strftime("%b")+' through '+num2date(te).replace(year=2000).strftime("%b")+')')
-    ax.plot(tso_a.index-td(days=182),tso_a.values,color=lincol[j],linewidth=3,label=sites[j]+' ('+num2date(ts).replace(year=2000).strftime("%b")+' through '+num2date(te).replace(year=2000).strftime("%b")+')')
-    #tso_a[0]['mean'].plot(linewidth=3,label=sites[j]+' (yeardays '+str(ts)+' through '+str(te)+')')
+    # do linear regression taking from https://www.geo.fu-berlin.de/en/v/soga-py/Advanced-statistics/time-series-analysis/Trends-and-seasonal-effects/Linear-trend-estimation/index.html
+    t = np.arange(0, len(tso_a))
+    z = np.polyfit(t, tso_a.values.flatten(), 1)
+    p = np.poly1d(z)
+    fitpts=p(t)
+    ax.plot(tso_a.index-td(days=182),tso_a.values,color=lincol[j],linewidth=3)# note the "182" making it mid-year point
+    ax.plot(tso_a.index-td(days=182),fitpts,'--',color=lincol[j],linewidth=6,label=sites[j]+' '+chr(0x2191)+'%0.2f' % z[0]+' degF/year')
 ax.legend(loc=2,fontsize=14)# upper left
 plt.ylabel('Annual Mean Temperature (degF)',fontsize=18)
 ax2=ax.twinx()
@@ -223,6 +223,7 @@ plt.xlabel('Year',fontsize=18)
 
 if depmin!=0:
     plt.title('For instrument depths ='+"%0.0f" % fth2m(depmean[0])+' meters')#rounds to nearest integer depth
+    plt.title('Depth ='+"%0.0f" % depmean[0] +' fathoms (~'+"%0.0f" % fth2m(depmean[0])+' meters)')#rounds to nearest integer depth
 
     #plt.title('Environmental Monitors on Lobster Traps (eMOLT) examples',fontsize=18)
 
